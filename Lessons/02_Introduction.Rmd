@@ -16,6 +16,20 @@ editor_options:
 ## Opening Discussion
 What makes an effective data visualization? What are the essential components/characteristics, and what are optional but nice-to-have components/characteristics? 
 
+Good colors & colors everyone can see; accessible and attractive color palettes
+Simple and clear as possible
+Labeled (especially with units) (essential)
+Scale of data makes sense
+Easy to understand and read for all audiences
+Axis labels
+Units
+Legible font sizes
+data point sizes - large/small enough
+Title (context dependent)
+Appropriate graph type
+Scale of axis
+Intearctive (if online and not on paper)
+
 Come up with a consensus list among your group members. 
 
 Compare your list to other groups' lists. 
@@ -25,11 +39,11 @@ Compare your list to other groups' lists.
 1. Navigate to https://www.data-to-viz.com/.
 2. Think of a dataset that you or someone in your field might want to visualize. What types of variables does this dataset contain? What information might you want to convey with a visualization?
 
-<add notes here>
+<I would like to visualze water quality data over time.>
 
 3. Scroll to the "Explore" section of the website. Follow the flow chart to find a type of graph that would suit your data. Click for more information and a link to the R Graph Gallery. If there are multiple options for graphing your data, how might you choose between them?
 
-<add notes here> 
+<I would choose a timeseries graph and would chose between the different options based on the data I'm trying to visualize.>
 
 4. Discuss and compare your findings with a partner.
 5. Scroll further down to the "Caveats" section of the website and click "See the Collection." Choose five topics to explore (some of these are incomplete so choose another if that is the case). Write some notes about what you learned below. 
@@ -37,6 +51,8 @@ Compare your list to other groups' lists.
 <add notes here>
 
 6. Discuss and compare your findings with a partner.
+
+<Boxplot - might hide sample size of each group, but is a good way to look at data. Violin plot helps show us what the different distributions look like. Density plot shows the distribution of a numeric variable.>
 
 ## A note on color palettes
 
@@ -94,7 +110,7 @@ Work with your group to reproduce the graph. This may require dividing up tasks 
 
 ```{r}
 # Import data
-EnoDischarge <- readNWISdv(siteNumbers = "02096500",
+EnoDischarge <- readNWISdv(siteNumbers = "02096500", #site number for Eno River
                      parameterCd = "00060", # discharge (ft3/s)
                      startDate = "2009-08-01",
                      endDate = "2019-07-31")
@@ -105,7 +121,7 @@ EnoDischarge <- readNWISdv(siteNumbers = "02096500",
 names(EnoDischarge)[4:5] <- c("Discharge", "Approval.Code")
 
 # dataRetrieval also includes attribute information
-attr(EnoDischarge, "variableInfo")
+attr(EnoDischarge, "variableInfo") #attr is the attribute call sign; 
   # note: imperial, not metric
 attr(EnoDischarge, "siteInfo")
   
@@ -148,6 +164,14 @@ hint: package ggrepel includes a `geom_label_repel` function
 hint: Google "add legend two geom layers ggplot"
 
 ```{r}  
+
+#1. adding column 
+EnoDischarge <- EnoDischarge %>%
+  mutate(Discharge2 = Discharge / 35.3147)
+
+#3. 
+EnoDischarge <- EnoDischarge %>%
+  mutate()
 
 
 ```
