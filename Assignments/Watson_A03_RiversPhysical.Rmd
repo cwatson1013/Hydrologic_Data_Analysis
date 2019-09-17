@@ -1,0 +1,190 @@
+---
+title: "Assignment 3: Physical Properties of Rivers"
+author: "Caroline Watson"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+## OVERVIEW
+
+This exercise accompanies the lessons in Hydrologic Data Analysis on the physical properties of rivers. 
+
+## Directions
+1. Change "Student Name" on line 3 (above) with your name.
+3. Work through the steps, **creating code and output** that fulfill each instruction.
+4. Be sure to **answer the questions** in this assignment document.
+6. When you have completed the assignment, **Knit** the text and code into a single PDF file.
+8. After Knitting, submit the completed exercise (PDF file) to the dropbox in Sakai. Add your last name into the file name (e.g., "Salk_A03_RiversPhysical.Rmd") prior to submission.
+
+The completed exercise is due on 18 September 2019 at 9:00 am.
+
+## Setup
+
+1. Verify your working directory is set to the R project file, 
+2. Load the tidyverse, dataRetrieval, and cowplot packages
+3. Set your ggplot theme (can be theme_classic or something else)
+4. Import a data frame called "MysterySiteDischarge" from USGS gage site 03431700. Upload all discharge data for the entire period of record. Rename columns 4 and 5 as "Discharge" and "Approval.Code". DO NOT LOOK UP WHERE THIS SITE IS LOCATED. 
+5. Build a ggplot of discharge over the entire period of record. 
+
+```{r, message = FALSE}
+#checking working directory
+getwd()
+
+#loading packages
+suppressMessages(library(tidyverse))
+library(dataRetrieval)
+library(lubridate)
+library(cowplot)
+
+#setting ggplot theme
+theme_set(theme_classic())
+
+#importing mystery site discharge dataset 
+MysterySiteDischarge <- readNWISdv(siteNumbers = "03431700",
+                     parameterCd = "00060", # discharge (ft3/s)
+                     startDate = "",
+                     endDate = "")
+
+#renaming columns 4 and 5
+names(MysterySiteDischarge)[4:5] <- c("Discharge", "Approval.Code")  
+
+#ggplot of discharge over entire sampling time
+MysteryPlot <- 
+  ggplot(MysterySiteDischarge, aes(x = Date, y = Discharge)) +
+      geom_line() +
+      xlab("Year")
+print(MysteryPlot)
+```
+
+## Analyze seasonal patterns in discharge
+
+5. Add a "Year" and "Day.of.Year" column to the data frame.
+6. Create a new data frame called "MysterySiteDischarge.Pattern" that has columns for Day.of.Year, median discharge for a given day of year, 75th percentile discharge for a given day of year, and 25th percentile discharge for a given day of year. Hint: the summarise function includes `quantile`, wherein you must specify `probs` as a value between 0 and 1.
+7. Create a plot of median, 75th quantile, and 25th quantile discharges against day of year. Median should be black, other lines should be gray. 
+```{r, message=FALSE}
+
+#adding year and day of year columns to data frame 
+MysterySiteDischarge <- MysterySiteDischarge %>%
+    mutate(Year = year(Date)) %>%
+    mutate(Day.of.Year = yday(Date))
+
+#creating new data frame
+MysterySiteDischarge.Pattern <- MysterySiteDischarge %>%
+  group_by(Day.of.Year) %>%
+  summarise(Last.Quantile.Discharge = quantile(Discharge, probs = 0.75),
+            First.Quantile.Discharge = quantile(Discharge, probs = 0.25), 
+                                     MedianDischarge = median(Discharge))           
+
+#ggplot of median, 75th quantile, and 25th quantile discharges
+MysterySiteDischarge.Pattern.Plot <- 
+  ggplot(MysterySiteDischarge.Pattern, 
+         aes(x = Day.of.Year)) +
+  geom_line(aes(y = MedianDischarge), color = "black") +
+  geom_line(aes(y = Last.Quantile.Discharge), color = "gray") + 
+  geom_line(aes(y = First.Quantile.Discharge), color = "dark gray") +
+  labs(x = "Day of the Year", y = expression("Discharge (ft"^3*"/s)")) +
+  theme(legend.position = "right")
+print(MysterySiteDischarge.Pattern.Plot)
+```
+
+8. What seasonal patterns do you see? What does this tell you about precipitation patterns and climate in the watershed?
+
+> There are clear seasonal patterns from this graph. Between the January and April (days 0 - 120), the median discharge is higher than the median discahrge from May to October (days 121 to about 300). There is another increase in discharge from November thorugh December. These same seasonal patterns are visiable in the 25th quantile and 75th quantile lines as well. From this graph of discharge by day of the year, we can see that precipitation patterns in this watershed are high in the winter and early spring  months and in the late fall. This likekly means that this site is located in an aread that is not covered in snow during the winter months, so it likely is a more temperate climate area. 
+
+## Create and analyze recurrence intervals
+
+9. Create two separate data frames for MysterySite.Annual.30yr (first 30 years of record) and MysterySite.Annual.Full (all years of record). Use a pipe to create your new data frame(s) that includes the year, the peak discharge observed in that year, a ranking of peak discharges, the recurrence interval, and the exceedende probability.
+
+10. Create a plot that displays the discharge vs. recurrence interval relationship for the two separate data frames (one set of points includes the values computed from the first 30 years of the record and the other set of points includes the values computed for all years of the record. 
+
+11. Create a model to predict the discharge for a 100-year flood for both sets of recurrence intervals. 
+
+```{r}
+#data frame for annual 30 year (first 30 years of record)
+MysterySite.Annual.30yr <- MysterySiteDischarge %>%
+  filter(Year < 1996) %>%
+  group_by(Year) %>%
+  summarise(PeakDischarge = max(Discharge)) %>%
+  mutate(Rank = rank(-PeakDischarge),
+  RecurrenceInterval = (length(Year) + 1)/Rank,
+  Probability = 1/RecurrenceInterval)
+
+#data frame for annual discharge for all dates of monitoring/record
+MysterySite.Annual.Full <- MysterySiteDischarge %>%
+  group_by(Year) %>%
+  summarise(PeakDischarge = max(Discharge)) %>%
+  mutate(Rank = rank(-PeakDischarge),
+  RecurrenceInterval = (length(Year) + 1)/Rank,
+  Probability = 1/RecurrenceInterval)
+
+#joining data frames together
+CombinedDischarge <- full_join(MysterySite.Annual.Full, MysterySite.Annual.30yr, by = "Year")
+
+#plot of discharge vs recurrence interval
+MysteryRecurrencePlot.Full2 <- 
+  ggplot(CombinedDischarge, aes(x = RecurrenceInterval.x, 
+                                y = PeakDischarge.x)) +
+  geom_point() +
+  geom_point(aes(x = RecurrenceInterval.y, 
+                                    y = PeakDischarge.y)) +
+  scale_colour_manual("", 
+                      breaks = c("All Data", "First 30 Years Data"),
+                      values = c("black", "#02818a")) +
+  labs(x = "Recurrence Interval", 
+       y = expression("Peak Discharge (ft"^3*"/s)")) +
+  theme(legend.position = "right")
+print(MysteryRecurrencePlot.Full2)
+
+#plot of discharge vs recurrence interval for 30 year record and all data record
+MysteryRecurrencePlot.Full <- 
+  ggplot(MysterySite.Annual.30yr, aes(x = RecurrenceInterval, y = PeakDischarge)) +
+  geom_point() +
+  geom_point(data = MysterySite.Annual.Full, color = "#02818a",
+             aes(x = RecurrenceInterval, y = PeakDischarge)) +
+  labs(x = "Recurrence Interval", y = expression("Peak Discharge (ft"^3*"/s)")) +
+  theme(legend.position = "right") #annotate? 
+print(MysteryRecurrencePlot.Full)
+
+#model to predict the discharge of a 100-year flood for both 30 years of data
+Mystery.RImodel.30yr <- lm(data = MysterySite.Annual.30yr, PeakDischarge ~ log(RecurrenceInterval))
+summary(Mystery.RImodel.30yr)
+Mystery.RImodel.30yr$coefficients
+
+#Predicted discharge of a 100 year flood
+Mystery.RImodel.30yr$coefficients[1] + Mystery.RImodel.30yr$coefficients[2]*log(100) #5538.257 cfs
+
+#model to predict the discharge of a 100 year flood for the whole record of data
+Mystery.RImodel.Full <- lm(data = MysterySite.Annual.Full, PeakDischarge ~ log(RecurrenceInterval))
+summary(Mystery.RImodel.Full)
+Mystery.RImodel.Full$coefficients
+
+#Predicted discharge of a 100 year flood for the whole record of data
+Mystery.RImodel.Full$coefficients[1] + Mystery.RImodel.Full$coefficients[2]*log(100) #4843 cfs discharge for 100 year flood with all the data
+
+```
+
+12. How did the recurrence interval plots and predictions of a 100-year flood differ among the two data frames? What does this tell you about the stationarity of discharge in this river?
+
+> Discharge for the recurrence interval plots 
+Discharge for the 100-year flood with the first 30 years of data predicts that the discharge will be about 5538 cfs. For the 100-year flood using all data, discharge was predicted to be 4843 cfs. The data here tells us that the stationarity of discharge in this river is
+
+As the recurrence interval increases, we would expect the peak discharge to increase exponentially as well. This graph shows that stationarity of discharge in this river is fairly consistent. The data points with all records of data and the data points with the first 30 years of data are similar enough and show that the river is pretty much the same throughout the years. The few points that have very high flows (two 30 year data points and one all year data points) could be attributed to an extreme weather event, like a hurricane. 
+
+## Reflection
+13. What are 2-3 conclusions or summary points about river discharge you learned through your analysis?
+
+> Summary points about river discharge that I learned from this analysis is that discharge can be seasonally dependent and have seasonal patterns which are easy to see and understand when looking at graphs. 
+
+14. What data, visualizations, and/or models supported your conclusions from 13?
+
+> 
+
+15. Did hands-on data analysis impact your learning about discharge relative to a theory-based lesson? If so, how?
+
+> Hands-on data analysis impacted my learning about discharge in that it helped me visualize and understand the graphs that we were producing. It helped to use real world data as well since that gave me a better understanding of how discharge can vary seasonally as well as climactically. 
+
+16.	How did the real-world data compare with your expectations from theory?
+
+>
