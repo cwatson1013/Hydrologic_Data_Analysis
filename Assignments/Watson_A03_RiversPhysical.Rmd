@@ -54,7 +54,7 @@ names(MysterySiteDischarge)[4:5] <- c("Discharge", "Approval.Code")
 MysteryPlot <- 
   ggplot(MysterySiteDischarge, aes(x = Date, y = Discharge)) +
       geom_line() +
-      xlab("Year")
+      labs(x = "Year", y = expression("Discharge (ft"^3*"/s)"))
 print(MysteryPlot)
 ```
 
@@ -119,32 +119,13 @@ MysterySite.Annual.Full <- MysterySiteDischarge %>%
   RecurrenceInterval = (length(Year) + 1)/Rank,
   Probability = 1/RecurrenceInterval)
 
-#joining data frames together
-CombinedDischarge <- full_join(MysterySite.Annual.Full, MysterySite.Annual.30yr, by = "Year")
-
-#plot of discharge vs recurrence interval
-MysteryRecurrencePlot.Full2 <- 
-  ggplot(CombinedDischarge, aes(x = RecurrenceInterval.x, 
-                                y = PeakDischarge.x)) +
-  geom_point() +
-  geom_point(aes(x = RecurrenceInterval.y, 
-                                    y = PeakDischarge.y)) +
-  scale_colour_manual("", 
-                      breaks = c("All Data", "First 30 Years Data"),
-                      values = c("black", "#02818a")) +
-  labs(x = "Recurrence Interval", 
-       y = expression("Peak Discharge (ft"^3*"/s)")) +
-  theme(legend.position = "right")
-print(MysteryRecurrencePlot.Full2)
-
 #plot of discharge vs recurrence interval for 30 year record and all data record
 MysteryRecurrencePlot.Full <- 
   ggplot(MysterySite.Annual.30yr, aes(x = RecurrenceInterval, y = PeakDischarge)) +
   geom_point() +
   geom_point(data = MysterySite.Annual.Full, color = "#02818a",
              aes(x = RecurrenceInterval, y = PeakDischarge)) +
-  labs(x = "Recurrence Interval", y = expression("Peak Discharge (ft"^3*"/s)")) +
-  theme(legend.position = "right") #annotate? 
+  labs(x = "Recurrence Interval", y = expression("Peak Discharge (ft"^3*"/s)"))
 print(MysteryRecurrencePlot.Full)
 
 #model to predict the discharge of a 100-year flood for both 30 years of data
@@ -161,25 +142,23 @@ summary(Mystery.RImodel.Full)
 Mystery.RImodel.Full$coefficients
 
 #Predicted discharge of a 100 year flood for the whole record of data
-Mystery.RImodel.Full$coefficients[1] + Mystery.RImodel.Full$coefficients[2]*log(100) #4843 cfs discharge for 100 year flood with all the data
+Mystery.RImodel.Full$coefficients[1] + Mystery.RImodel.Full$coefficients[2]*log(100) 
+#4843 cfs discharge for 100 year flood with all the data
 
 ```
 
 12. How did the recurrence interval plots and predictions of a 100-year flood differ among the two data frames? What does this tell you about the stationarity of discharge in this river?
 
-> Discharge for the recurrence interval plots 
-Discharge for the 100-year flood with the first 30 years of data predicts that the discharge will be about 5538 cfs. For the 100-year flood using all data, discharge was predicted to be 4843 cfs. The data here tells us that the stationarity of discharge in this river is
-
-As the recurrence interval increases, we would expect the peak discharge to increase exponentially as well. This graph shows that stationarity of discharge in this river is fairly consistent. The data points with all records of data and the data points with the first 30 years of data are similar enough and show that the river is pretty much the same throughout the years. The few points that have very high flows (two 30 year data points and one all year data points) could be attributed to an extreme weather event, like a hurricane. 
+> Discharge for the recurrence interval plots shows that as recurrence interval increases in both the first 30 years of data (black points) and the full set of data (blue/green points), the peak discharge increaes exponentially. Both data frames had fairly similar trends in the data for the recurrence interval plotted against peak discharge. This graph shows that stationarity of discharge in this river is fairly consistent. The data points with all records of data and the data points with the first 30 years of data represent stationarity in terms of discharge at this river. The few points that have very high flows (two 30 year data points and one all year data points) could be attributed to an extreme weather event, like a hurricane. Discharge for the 100-year flood with the first 30 years of data predicts that the discharge will be about 5538 cfs. For the 100-year flood using all data, discharge was predicted to be 4843 cfs. Although the discharge values are not that close, they are similar enough to assume that discharge in this river is stationary. If the data points were more spread out, particularly at the lower peak discharge levels when the recurrence interval is smaller, then the river discharge may not be representing staitonarity. 
 
 ## Reflection
 13. What are 2-3 conclusions or summary points about river discharge you learned through your analysis?
 
-> Summary points about river discharge that I learned from this analysis is that discharge can be seasonally dependent and have seasonal patterns which are easy to see and understand when looking at graphs. 
+> Summary points about river discharge that I learned from this analysis is that discharge can be seasonally dependent and have seasonal patterns which are easy to see and understand when looking at graphs. I also learned that peak discharge and recurrence intervals can be exponentially related. This is likely because the lower the peak discharge, the more likely that rain even will happen, which will result in a lower reucrrence interval. 
 
 14. What data, visualizations, and/or models supported your conclusions from 13?
 
-> 
+> The data that support point about seasonal dependency is the graph with the median, 25th percentile, and 75th percentile discharge of this mystery site river. This graph shows that there are seasonal patterns, particularly since there is very high discharge during the winter months. For the recurrence interval, the visualization that helps with understanding that summary point is the last graph in the lab. This graph shows the recurrence interval and the peak discharge at that recurrence interval. This visualization supports my conclusion from 13.   
 
 15. Did hands-on data analysis impact your learning about discharge relative to a theory-based lesson? If so, how?
 
@@ -187,4 +166,4 @@ As the recurrence interval increases, we would expect the peak discharge to incr
 
 16.	How did the real-world data compare with your expectations from theory?
 
->
+> The real-world data was what I expected to see based off the theory. Although I thought some of the real-world data was messier than I expected (or remembered it was going to be!), it was easy to work with. Having to figure out what to do with missing days in the dataset reminded me that I was working with real world data. 
