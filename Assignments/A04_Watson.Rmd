@@ -117,7 +117,8 @@ nutrients.dat <- nutrients.dat.raw %>%
 #ggplot with N over time
 Nitrogenplot <- ggplot(nutrients.dat, aes(x = nutrients.dat$Date, y = nutrients.dat$`TotalNitrogen_mgl-N`)) +
                          geom_point(color = "darkorange4") +
-                         labs(x = "Date", y = "Total Nitrogen (mg/L)")
+                         labs(x = "Date", y = "Total Nitrogen (mg/L)") +
+          theme(axis.title.x = element_blank())
 print(Nitrogenplot)
 
 #ggplot with P over time
@@ -125,11 +126,12 @@ Phosphorousplot <- ggplot(nutrients.dat, aes(x = Date,
                              y = nutrients.dat$`TotalPhosphorus_mgl-P`)) +
   geom_point(color = "steelblue4") +
   labs(x = "Date", y = "Total Phosphorous (mg/L)")
+  
 print(Phosphorousplot)  
 
 #stacked ggplots with cowplot
 PandNplot <-
-  plot_grid(Nitrogenplot, Phosphorousplot, ncol = 2, rel_widths = c(1.5, 1.5))
+  plot_grid(Nitrogenplot, Phosphorousplot, ncol = 1, rel_widths = c(1.5, 1.5))
 
 print(PandNplot)
 
