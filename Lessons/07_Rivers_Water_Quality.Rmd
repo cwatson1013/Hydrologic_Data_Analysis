@@ -31,18 +31,10 @@ What is water quality? What are some of the things it encompasses?
 ```{r, message = FALSE}
 getwd()
 
-<<<<<<< HEAD
 packages <- c("dataRetrieval", "tidyverse", "cowplot", "lubridate") #does the same thing as putting library in front of each package
 invisible(suppressPackageStartupMessages(lapply(packages, 
                                                 library, 
                                                 character.only = TRUE))) #invisible makes things invisible and the messages don't come up 
-=======
-packages <- c("dataRetrieval", "tidyverse", "cowplot", "lubridate")
-invisible(suppressPackageStartupMessages(lapply(packages, 
-                                                library, 
-                                                character.only = TRUE))) 
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
-
 
 theme_set(theme_classic())
 ```
@@ -55,39 +47,27 @@ theme_set(theme_classic())
 
 Why are these important measures of water quality?
 
-<<<<<<< HEAD
 > to determine what can live there and what can't live there; there are only certain ranges of pH that are acceptable for certain uses of water for ecosystems, species, and/or humans
 
 What types of disturbances can impact these parameters?
 
 > Mining can impact these parameters as well as many other activities
-=======
->
 
-What types of disturbances can impact these parameters?
-
->
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
 
 ## How does mining impact specific conductance and pH?
 
 Let's import data from two sites in West Virginia. One site, Twelvepole Creek, experienced comparatively less mining in its water shed than the other, the Kanawha river. We will read in all of the data, but will start by looking at just data from before 1977.
 
 ```{r pull_data}
-<<<<<<< HEAD
+
 dat.raw <- readNWISqw(siteNumbers = c("03201300","03206790"), #Kanawha river & Twelvepole Creek; qw for water quality data
-=======
-dat.raw <- readNWISqw(siteNumbers = c("03201300","03206790"), #Kanawha river & Twelvepole Creek
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
                      parameterCd = c("00095", "00400"), # Specific Conductance & pH
                      startDate = "",
                      endDate = "")
 
-<<<<<<< HEAD
+
 str(dat.raw, give.attr = FALSE) #more columns here in this dataframe than the dataframe for the daily data we downloaded last class; interested in the 'result' column as that will tell you the pH and the specific conductance values that were measured
-=======
-str(dat.raw, give.attr = FALSE)
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
+
 
 dat <- dat.raw %>%
   select(Site = site_no, 
@@ -95,17 +75,10 @@ dat <- dat.raw %>%
          Parameter = parm_cd, 
          Value = result_va) %>%
   group_by(Date, Parameter, Site) %>%
-<<<<<<< HEAD
   summarize(Value = mean(Value)) %>% #summarize by mean value since on some days we have more than 1 value for pH or specific conductance each day
   spread(key = Parameter, value = Value) %>% #spread function: need a key (tells you which column you want the data to end up in), and need a value
   rename(SpC = '00095', pH = '00400') %>%
   mutate(Site = case_when(Site == "03201300" ~ "Kanawha River", #case_when funtion: like an if or statement; first part is conditional statement ~ (then) put "Kanawha River"; can also create a new column with the site name (in this case we just replaced site number because we don't want it)
-=======
-  summarize(Value = mean(Value)) %>%
-  spread(key = Parameter, value = Value) %>%
-  rename(SpC = '00095', pH = '00400') %>%
-  mutate(Site = case_when(Site == "03201300" ~ "Kanawha River",
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
                           Site == "03206790" ~ "Twelvepole Creek"))
 
 dat.early <- dat %>%
@@ -145,7 +118,6 @@ print(SpC.plot)
 
 What differences do you see?
 
-<<<<<<< HEAD
 > Kanawha River - specific conductance is very variable; more variable than the Twelvepole creek dataset. For pH Kanawha River is more variable with pH than Twelvepole Creek, but there's also a difference in sampling frequency. If you don't measure as frequently, you won't see all the variability. pH of Kanawha River is also much higher than the pH in the Twelvepole Creek. Specific conductance - is pretty variable.  
 
 Why might mining be causing the changes you see?
@@ -155,17 +127,6 @@ Why might mining be causing the changes you see?
 What is the data frequency of these water quality samples? Why don't we have daily values? How does this inform your interpretation of the data?
 
 > Seems like data is sampled 3 times a month. We likely don't have daily values because it is resource intensive and would require someone to go out and sample everyday. pH and specific conductance changes very little between days, so it is not worth having someone monitor it on a daily basis.  
-=======
->
-
-Why might mining be causing the changes you see?
-
->
-
-What is the data frequency of these water quality samples? Why don't we have daily values? How does this inform your interpretation of the data?
-
->
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
   
 ## What can legislative protections do for water quality?
 
@@ -202,15 +163,11 @@ print(SpC.plot)
 
 Discuss with your group about the differences you see.
 
-<<<<<<< HEAD
+
 > pH in Kanawha River increased, but then stabilized after 1977. pH for Twelvepole Creek decreased after 1977. Because Twelvepole decreased, which we wouldn't expect. Specific conductance in both rivers was less variable and lower. 
 
-## Were remediation efforts successful? Yes, but we will do statistical test to see the differences. 
-=======
->
-
-## Were remediation efforts successful?
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
+## Were remediation efforts successful? 
+> Yes, but we will do statistical test to see the differences. 
 
 Let's test whether or not the yearly average concentrations in the Kanawha River are significantly different before and after 1977. 
 
@@ -218,17 +175,10 @@ Let's test whether or not the yearly average concentrations in the Kanawha River
 Kanawha.yearly.averages <- dat %>%
   filter(Site == "Kanawha River") %>%
   group_by(Year = year(Date)) %>%
-<<<<<<< HEAD
   select(-Site, -Date) %>% #get rid of site and date columns
   summarize_all(mean) %>%
   mutate(bin = case_when(Year %in% c(1958:1977) ~ "Pre", #20 years before the reclimation act was passed
                          Year %in% c(1978:1997) ~ "Post")) #20 years after the reclimation act was passed
-=======
-  select(-Site, -Date) %>%
-  summarize_all(mean) %>%
-  mutate(bin = case_when(Year %in% c(1958:1977) ~ "Pre",
-                         Year %in% c(1978:1997) ~ "Post")) 
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
 
 Kanawha.early <- Kanawha.yearly.averages %>% filter(Year %in% c(1958:1977))
 Kanawha.late <- Kanawha.yearly.averages %>% filter(Year %in% c(1978:1997))
@@ -258,11 +208,8 @@ densityplots <- ggplot(Kanawha.yearly.averages %>% filter(!is.na(bin)),
                     breaks=c("Pre", "Post"),
                     labels=c("20 years before SMCRA", "20 years after SMCRA"))
 
-<<<<<<< HEAD
+
 print(densityplots) #density plot is similar to a histogram and shows you the probability distribution
-=======
-print(densityplots)
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
 
 x <- (Kanawha.yearly.averages %>% filter(bin == "Pre"))$SpC
 y <- (Kanawha.yearly.averages %>% filter(bin == "Post"))$SpC
@@ -272,28 +219,18 @@ qqnorm(y, las = 1); qqline(y)
 
 cat("Length x:", length(x), "\n", "Length y:", length(y))
 
-<<<<<<< HEAD
+
 t.test(x, y) #yes, these are statistically significant because the p-value is very low
-=======
-t.test(x, y)
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
+
 ```
 
 How would you communicate these results to a manager? 
 
-<<<<<<< HEAD
 > The t-test shows that the specific conductance is statistically significant because the t-test resulted in a low p-value. The density plot and qqplot show that specific conductance in the Kanawha River is somewhat normally distributed as well. The t-test results suggest that the data is different for both the data before the mining act and after the mining act. Thus, the mining act was somewhat successful in mitigating high pH and/or high specific conductance.
 
 What can you say with data visualization that you can't say with just the statistical tests?
 
 > The data visualization plots show the distribution of the data and not just a number. 
-=======
->
-
-What can you say with data visualization that you can't say with just the statistical tests?
-
->
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
 
 
 ## How have individual ions changed over the this timeperiod?
@@ -315,7 +252,7 @@ Manganese.plot <- ggplot(Manganese.dat, aes(x = Date, y = Manganese_ugL)) +
   ggtitle("Manganese Concentrations in the Kanawha River")
 
 print(Manganese.plot)
-<<<<<<< HEAD
+
 
 #plotting with points instead
 Manganese.plot.point <- ggplot(Manganese.dat, aes(x = Date, y = Manganese_ugL)) +
@@ -326,25 +263,18 @@ Manganese.plot.point <- ggplot(Manganese.dat, aes(x = Date, y = Manganese_ugL)) 
   ggtitle("Manganese Concentrations in the Kanawha River")
 
 print(Manganese.plot.point)
-=======
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
+
 ```
 
 Try plotting the manganese data with points instead of lines. Which do you prefer? Why?
 
-<<<<<<< HEAD
+
 > I prefer the points because I find it easier to understand what is going on and the gaps between the data are visiable and easier to understand than when looking at the line graph. 
 
 EPA drinking water standards for Manganese are 0.05 *_mg/L_*. How does the Kanawha stack up?
 
 > The Kanawha exceeds drinking water standards for Manganese sometimes since the EPA standard is 50 micrograms/L. Before the reclimation act, we can see that the concentration of Manganese increased before the reclimation act and then decreased drastically after the act was put in place. However, even with this decrease, the concentration of Manganese in the Kanawha River was still higher than the EPA drinking water standard. 
-=======
->
 
-EPA drinking water standards for Manganese are 0.05 *_mg/L_*. How does the Kanawha stack up?
-
->
->>>>>>> 096cc38c2f3f68492572892a483a0b1d090a9cd0
 
 Take some time to look at other ions as well. Some suggestions are sulfate (```00945```), nitrate (```71851```), and iron (```71885```), or use the ```whatNWISdata()``` function to find others! EPA drinking water regulations can be found here: https://www.epa.gov/ground-water-and-drinking-water/national-primary-drinking-water-regulations. Pay close attention to units! Information about parameter codes can be found in the dataframe ```parameterCdFile```.
 
