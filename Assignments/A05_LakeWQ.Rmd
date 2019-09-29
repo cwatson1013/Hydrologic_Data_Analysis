@@ -46,13 +46,13 @@ The completed exercise is due on 2 October 2019 at 9:00 am.
 
 ```
 
-7. Find and quantify instances where trophic.class and trophic.class.secchi differ. Do the same comparing trophic.class and trophic.class.tp. 
+7. What proportion of total observations are considered eutrohic or hypereutrophic according to the three different metrics (trophic.class, trophic.class.secchi, trophic.class.tp)?
 
 ```{r}
 
 ```
 
-What proportion of observations do these metrics differ?
+Which of these metrics is most conservative in its designation of eutrophic conditions? Why might this be?
 
 > 
 
