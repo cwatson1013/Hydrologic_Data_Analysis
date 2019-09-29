@@ -183,7 +183,7 @@ LAGOStrophic$trophic.class <-
 #   factor(LAGOStrophic$season,
 #          levels = c("Spring", "Summer", "Fall", "Winter"))
 
-#scales::show_col(colormap(colormap = colormaps$magma, nshades=16))
+#scales::show_col(colormap(colormap = colormaps$magma, nshades=16)); can generate color palletes and grab the hex codes from this
 ```
 
 Now let's compare TSI values calculated from chl, secchi depth, and TP. If these were all perfectly equivalent metrics, all points should line up on the 1:1 line. 
@@ -207,14 +207,14 @@ print(chlvstp)
 
 What is the observed relationship, and how does it depart from the 1:1 relationship? What do values above or below the 1:1 line tell us about the conditions present in a lake?
 
-> 
+> 1:1 line represents every calculation based on chl-a and secchi depth, they would all fall along this line; if we were predict secchi depth, then CHL-a would be the best predictor; for phosphorous we can see similar pattern; phosphorous graph can help predict the  
 
 ### Comparing TSI across states
 Here are three different ways to envision TSI across the states in the LAGOS-NE database. 
 ```{r}
 stateTSIviolin <- ggplot(LAGOStrophic, aes(x = state, y = TSI.chl)) +
   geom_violin(draw_quantiles = 0.50)
-print(stateTSIviolin)
+print(stateTSIviolin) #wide violin plot - represents clustering of points at that value; skinny violin plots shows the distribution as well, but it's not as wide/distributed
   
 stateTSIbar <- ggplot(LAGOStrophic, aes(x = state, fill = trophic.class)) +
   geom_bar(stat = "count", position = position_dodge(preserve = "single")) +
@@ -231,7 +231,7 @@ stateTSIjitter <- ggplot(LAGOStrophic, aes(x = state, y = TSI.chl, color = seaso
   geom_rect(xmin = -1, xmax = 19, ymin = 50, ymax = 70,
             fill = "gray70", color = "gray70") +
   geom_rect(xmin = -1, xmax = 19, ymin = 70, ymax = 100,
-            fill = "gray60", color = "gray60") +
+            fill = "gray60", color = "gray60") + #rectangles behind datapoints represent the different trophic states; x = -1 to fill up on entire plot
   geom_jitter(alpha = 0.3) +
   # geom_hline(yintercept = 40, lty = 2) +
   # geom_hline(yintercept = 50, lty = 2) +
@@ -245,11 +245,19 @@ print(stateTSIjitter)
 ```
 What insights do we gain from the different visualizations?
 
-> Violin: 
+> Violin: shows the distribution in density of the points; great for getting the range and seeing the distribution
 
-> Bar: 
+> Bar: explains some of the distribution amont each 
 
 > Jitter:
 
 ## Closing Discussion
 What factors might you expect to influence TSI scores in a given area? What are some variables in the LAGOSNE database that could help you test your hypothesis?
+
+winter we get lower values of trophic state, summer values we get higher values; some state monitor during different times of year; some of the linear points in one line may indicate that the state is monitoring and rounding the values to integers. could also be that the state does not monitor as often or the measurements only go up by by 2 units
+
+```{r}
+
+write.csv(LAGOStrophic, "./Data/")
+
+```
