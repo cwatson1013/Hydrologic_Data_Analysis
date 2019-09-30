@@ -35,6 +35,7 @@ getwd()
 suppressMessages(library(tidyverse))
 library(lubridate)
 library(LAGOSNE)
+library(viridis)
 
 #setting ggplot theme
 theme_set(theme_classic())
@@ -42,6 +43,13 @@ options(scipen = 100)
 
 # Load LAGOSNE data into R session
 lagosne_get(dest_folder = LAGOSNE:::lagos_path(), overwrite = TRUE)
+
+#loading LAGOS dataset
+LAGOSdata <- lagosne_load()
+names(LAGOSdata)
+
+#loading trohic state index csv file
+LAGOS.trophic <- read.csv("./Data/LAGOStrophic.csv")
 
 ```
 
@@ -51,9 +59,9 @@ lagosne_get(dest_folder = LAGOSNE:::lagos_path(), overwrite = TRUE)
 
 ```{r}
 
-#creating trophic 
+#creating trophic.class.secchi column in datafram
 LAGOStrophic <- 
-  mutate(LAGOStrophic, 
+  mutate(LAGOS.trophic, 
          TSI.chl = round(10*(6 - (2.04 - 0.68*log(chla)/log(2)))),
          TSI.secchi = round(10*(6 - (log(secchi)/log(2)))),
          TSI.tp = round(10*(6 - (log(48/tp)/log(2)))), 
@@ -61,8 +69,14 @@ LAGOStrophic <-
             ifelse(TSI.chl < 40, "Oligotrophic", 
                    ifelse(TSI.chl < 50, "Mesotrophic",
                           ifelse(TSI.chl < 70, "Eutrophic", "Hypereutrophic"))), 
-         trophic.class.secchi())
-
+         trophic.class.secchi = 
+           ifelse(TSI.secchi < 40, "Oligotrophic", 
+              ifelse(TSI.secchi < 50, "Mesotrophic", 
+                     ifelse(TSI.secchi < 70, "Eutrophic", "Hypereutrophic"))), 
+         trophic.class.tp = 
+           ifelse(TSI.tp < 40, "Oligotrophic", 
+                  ifelse(TSI.tp < 50, "Mesotrophic", 
+                         ifelse(TSI.tp < 70, "Eutrophic", "Hypereutrophic"))))
 
 ```
 
@@ -71,15 +85,27 @@ LAGOStrophic <-
 
 ```{r}
 
+#number of observations in trophic.class
+LAGOStrophic %>% count(trophic.class) #
+
+#number of observations in trophic.class.secchi
+LAGOStrophic %>% count(trophic.class.secchi)
+
+#number of observations in trophic.class.tp
+LAGOStrophic %>% count(trophic.class.tp)
+
 ```
 
-7. Find and quantify instances where trophic.class and trophic.class.secchi differ. Do the same comparing trophic.class and trophic.class.tp. 
+7. What proportion of total observations are considered eutrohic or hypereutrophic according to the three different metrics (trophic.class, trophic.class.secchi, trophic.class.tp)?
 
 ```{r}
+#proportion of tophic.class
+LAGOStrophic %>% count()
+
 
 ```
 
-What proportion of observations do these metrics differ?
+Which of these metrics is most conservative in its designation of eutrophic conditions? Why might this be?
 
 > 
 
@@ -90,56 +116,109 @@ Note: To take this further, a researcher might determine which trophic classes a
 8. Create a data frame that includes the columns lagoslakeid, sampledate, tn, tp, state, and state_name. Mutate this data frame to include sampleyear and samplemonth columns as well. Call this data frame LAGOSNandP. 
 
 ```{r}
+#creating LAGOS dataframes
+LAGOSlocus <- LAGOSdata$locus
+LAGOSstate <- LAGOSdata$state
+LAGOSnutrient <- LAGOSdata$epi_nutr
+
+#joining state and nutrient dataframes
+LAGOSlocations <- left_join(LAGOSlocus, LAGOSstate, by = "state_zoneid")
+
+#joining LAGOS locations and nutrient dataframs
+LAGOSNandP <- left_join(LAGOSlocations, LAGOSnutrient, by = "lagoslakeid") %>%
+  select(lagoslakeid, sampledate, tn, tp, state, state_name) %>%
+  mutate(sampleyear = year(sampledate), 
+         samplemonth = month(sampledate))
 
 ```
 
 9. Create two violin plots comparing TN and TP concentrations across states. Include a 50th percentile line inside the violins.
 ```{r}
+#violin plot comparing TN across states
+TNstateviolin <- ggplot(LAGOSNandP, aes(x = state, y = tn)) +
+  geom_violin(draw_quantiles = 0.50) +
+  labs(x = "State", y = "Total Nitrogen Concentration (mg/L)")
+print(TNstateviolin)
 
+#violin plot comparing TP across states
+TPstateviolin <- ggplot(LAGOSNandP, aes(x = state, y = tp)) +
+  geom_violin(draw_quantiles = 0.50) +
+  labs(x = "State", y = "Total Phosphorous Concentration (mg/L)")
+print(TPstateviolin)
 ```
 
 Which states have the highest and lowest median concentrations?
 
-> TN:
+> TN: Iowa has the highest median concentration and Vermont has the lowest median concentration.
 
-> TP:
+> TP: Illinois has the highest median concentration and Maine has the lowest median concentration.
 
 Which states have the highest and lowest concentration ranges?
 
-> TN: 
+> TN: Iowa has the highest concentration range and New Hampshire and Vermont have the lowest concentration ranges.
 
-> TP: 
+> TP: Illinois and Minnesota have the highest concentration ranges and Connecticut and Pennslyvania have the lowest concentration ranges. 
 
 10. Create two jitter plots comparing TN and TP concentrations across states, with samplemonth as the color. Choose a color palette other than the ggplot default.
 
 ```{r}
+#jitter ggplot of TN concentrations across states
+TNstate_jitter <- ggplot(LAGOSNandP, aes(x = state, y = tn, color = samplemonth)) +
+ geom_jitter(alpha = 0.3) +
+ labs(x = "State", y = "Total Nitrogen Concentration (mg/L)", color = "Month") +
+ scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
+ theme(legend.position = "top")
+print(TNstate_jitter)
+
+#jitter ggplot of TP concentrations across states
+TPstate_jitter <- ggplot(LAGOSNandP, aes(x = state, y = tp, color = samplemonth)) +
+ geom_jitter(alpha = 0.3) +
+ labs(x = "State", y = "Total Phosphorus Concentration (mg/L)", color = "Month") +
+ scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
+ theme(legend.position = "top")
+print(TPstate_jitter)
 
 ```
 
 Which states have the most samples? How might this have impacted total ranges from #9?
 
-> TN:
+> TN: Iowa has the most samples, which is likely why Iowa had the highest median concentration and highest range. 
 
-> TP: 
+> TP: Illinois and Minnesota look like they have the most samples. This definitely impacted the highest median concentration (Illinois) and highest concentration ranges (Illinois and Minnesota). 
 
 Which months are sampled most extensively? Does this differ among states?
 
-> TN:
+> TN: The summer to fall months are sampled most extensively. Yes, this does differ among states as some states have samples in the winter (i.e. Wisconsin).
 
-> TP: 
+> TP: The summer and fall monts look as if they are sampled most extensively. However, some states have samples from the winter months and fall months. 
 
 11. Create two jitter plots comparing TN and TP concentrations across states, with sampleyear as the color. Choose a color palette other than the ggplot default.
 
 ```{r}
+#jitter plot of TN across state with sampleyear as color
+TNstate_jitter2 <- ggplot(LAGOSNandP, aes(x = state, y = tn, color = sampleyear)) +
+ geom_jitter(alpha = 0.3) +
+ labs(x = "State", y = "Total Nitrogen Concentration (mg/L)", color = "Year") +
+ scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
+ theme(legend.position = "top")
+print(TNstate_jitter2)
+
+#jitter plot of TP across state with sampleyear as teh color 
+TPstate_jitter2 <- ggplot(LAGOSNandP, aes(x = state, y = tp, color = sampleyear)) +
+ geom_jitter(alpha = 0.3) +
+ labs(x = "State", y = "Total Phosphorus Concentration (mg/L)", color = "Year") +
+ scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
+ theme(legend.position = "top")
+print(TPstate_jitter2)
 
 ```
 
 
 Which years are sampled most extensively? Does this differ among states?
 
-> TN:
+> TN: Years 1980s - 2016 were sampled most frequently. This does differ a little among states, with CT having some sampling occuring between 1950s - 1975. 
 
-> TP: 
+> TP: The years 1975 - 2016 were sampled most frequently for total phosphorus. However, this does differ among states as some states, such as MN, CT, ME, and VT have samples from the 1950s (or earlier) included in the dataset. 
 
 ## Reflection
 12. What are 2-3 conclusions or summary points about lake water quality you learned through your analysis?
