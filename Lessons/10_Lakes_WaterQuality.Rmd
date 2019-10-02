@@ -61,18 +61,22 @@ Wrangle LAGOSdata so that you have a new data frame that includes TN, TP, your f
 ```{r}
 # Wrangle data here.
 LAGOSstate <- LAGOSdata$locus %>% select(lagoslakeid, state_zoneid, gnis_name)
-LAGOS_chemial <- LAGOSdata$epi_nutr %>% select(lagoslakeid, sampledate, chla, doc, tp, tn, secchi)
-LAGOSdepth <- LAGOSdata$lakes_limno
+LAGOSstatedata <- LAGOSdata$state %>% select(state_name, state_zoneid)
+LAGOS_chemical <- LAGOSdata$epi_nutr %>% select(lagoslakeid, sampledate, chla, doc, tp, tn, secchi)
+LAGOSdepth <- LAGOSdata$lakes_limno %>% select(lagoslakeid, meandepth)
 
+#joining state datasets together
+LAGOSstatejoin <- left_join(LAGOSstate, LAGOSstatedata, by = "state_zoneid")
 
-LAGOStrophic <- 
-  left_join(LAGOSnutrient, LAGOSlocations, by = "lagoslakeid") %>%
-  select(lagoslakeid, sampledate, chla, tp, secchi, 
-         gnis_name, lake_area_ha, state, state_name) %>%
+#joining state and chemical data 
+LAGOSdata_skinny <- left_join(LAGOSstatejoin, LAGOS_chemial, by = "lagoslakeid")
+
+#joining chemical & state table to the depth information
+LAGOSwrangled <- left_join(LAGOSdata_skinny, LAGOSdepth, by = "lagoslakeid") %>%
   mutate(sampleyear = year(sampledate), 
          samplemonth = month(sampledate), 
-         season = as.factor(quarter(sampledate, fiscal_start = 12))) %>% #lubridate function has quarter which divides data up into quarters; used fiscal_start = 12 to have it start dividing stuff into quarters from month 12, which then influences what order you put the seasons in below in the levels text; quarter knows that it needs to look at the month of the date
-  drop_na(chla:secchi)
+         season = as.factor(quarter(sampledate, fiscal_start = 12))) %>%
+  drop_na(chla:secchi, meandepth)
 
 
 ```
@@ -82,17 +86,39 @@ Examine potential correlations among your predictor variables. If your predictor
 1. Create a correlation plot for your 7 variables of interest (TN, TP, and the five predictor variables). What patterns do you see? (hint: function `corrplot` in the corrplot package. I like to use `upper = "ellipse"` inside the function).
 
 ```{r}
+#install.packages("corrplot")
+
+#dropping columns we don't need
+LAGOSwrangled.final <- LAGOSwrangled %>%
+  select(chla, doc, tp, tn, secchi, meandepth) %>%
+  na.omit()
+
+#correlation plot of 7 variables of interest
+LAGOSwrangledcorr <- cor(LAGOSwrangled.final)
+
+corrplot(LAGOSwrangledcorr, upper = "ellipse")
+
 
 ```
 
 What patterns do you see?
 
->
+> Some variables are positively correlated with others while some variables are negatively correlated with other variables. For example, mean depth and doc are negatively correlated. Whereas tp and chlorophyll are positively correlated. 
 
 2. Create two linear regression models (hint: function `lm`) to predict TN and TP using your five predictor variables. 
 
 ```{r}
+#linear regression predicting TN
+TNregression <- lm(tn ~ chla + doc + secchi + meandepth + state_name, data = LAGOSwrangled)
+summary(TNregression)
 
+#linear regression predicting TP
+TPregression <- lm(tp ~ chla + doc + secchi + meandepth + state_name, data = LAGOSwrangled)
+summary(TPregression)
+
+#stepAIC
+step(TNregression)
+step(TPregression)
 ```
 
 How much variance in TN and TP is accounted for by your full model?
