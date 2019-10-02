@@ -41,15 +41,12 @@ library(viridis)
 theme_set(theme_classic())
 options(scipen = 100)
 
-# Load LAGOSNE data into R session
-lagosne_get(dest_folder = LAGOSNE:::lagos_path(), overwrite = TRUE)
-
 #loading LAGOS dataset
 LAGOSdata <- lagosne_load()
 names(LAGOSdata)
 
 #loading trohic state index csv file
-LAGOS.trophic <- read.csv("./Data/LAGOStrophic.csv")
+LAGOS.trophic <- read.csv("../Data/LAGOStrophic.csv")
 
 ```
 
@@ -86,7 +83,7 @@ LAGOStrophic <-
 ```{r}
 
 #number of observations in trophic.class
-LAGOStrophic %>% count(trophic.class) #
+LAGOStrophic %>% count(trophic.class) 
 
 #number of observations in trophic.class.secchi
 LAGOStrophic %>% count(trophic.class.secchi)
@@ -99,15 +96,29 @@ LAGOStrophic %>% count(trophic.class.tp)
 7. What proportion of total observations are considered eutrohic or hypereutrophic according to the three different metrics (trophic.class, trophic.class.secchi, trophic.class.tp)?
 
 ```{r}
-#proportion of tophic.class
-LAGOStrophic %>% count()
+#proportion of trophic.class that is eutrophic
+(41861/74951)*100 #55.85% which can be rounded to 56%
 
+#proportion of trophic.class that is hypereutrophic
+(14379/74951)*100 #19.18% which is about 19%
+
+#proportion of trophic.class.secchi that is eutrophic
+(28659/74951)*100 #38.24% which is about 38% 
+
+#proportion of trophic.class.secchi that is hypereutrophic
+(5099/74951)*100 #6.8% of trophic.class.secchi is hyperutrophic
+
+#proportion of trophic.class.tp that is eutrophic
+(24839/74951)*100 #33% of the trophic.class.tp is eutrophic
+
+#proportion of trophic.class.tp that is hypereutrophic
+(7228/74951)*100 #9.6% so about 10% of trophic.class.tp is hypereutrophic
 
 ```
 
 Which of these metrics is most conservative in its designation of eutrophic conditions? Why might this be?
 
-> 
+> Trophic class total phosphorus is the most conservative with its designation of eutrophic conditions. This is likely because there are other things impacting eutrophication, such as secchi depth and total nitrogen. Total phosphorus can limit growth of algae, especially in summer months. 
 
 Note: To take this further, a researcher might determine which trophic classes are susceptible to being differently categorized by the different metrics and whether certain metrics are prone to categorizing trophic class as more or less eutrophic. This would entail more complex code.
 
@@ -115,7 +126,7 @@ Note: To take this further, a researcher might determine which trophic classes a
 
 8. Create a data frame that includes the columns lagoslakeid, sampledate, tn, tp, state, and state_name. Mutate this data frame to include sampleyear and samplemonth columns as well. Call this data frame LAGOSNandP. 
 
-```{r}
+```{r, warning = FALSE}
 #creating LAGOS dataframes
 LAGOSlocus <- LAGOSdata$locus
 LAGOSstate <- LAGOSdata$state
@@ -133,17 +144,17 @@ LAGOSNandP <- left_join(LAGOSlocations, LAGOSnutrient, by = "lagoslakeid") %>%
 ```
 
 9. Create two violin plots comparing TN and TP concentrations across states. Include a 50th percentile line inside the violins.
-```{r}
+```{r, warning = FALSE}
 #violin plot comparing TN across states
 TNstateviolin <- ggplot(LAGOSNandP, aes(x = state, y = tn)) +
   geom_violin(draw_quantiles = 0.50) +
-  labs(x = "State", y = "Total Nitrogen Concentration (mg/L)")
+  labs(x = "State", y = expression(Total ~ N ~ (mu*g / L)))
 print(TNstateviolin)
 
 #violin plot comparing TP across states
 TPstateviolin <- ggplot(LAGOSNandP, aes(x = state, y = tp)) +
   geom_violin(draw_quantiles = 0.50) +
-  labs(x = "State", y = "Total Phosphorous Concentration (mg/L)")
+  labs(x = "State", y = expression(Total ~ P ~ (mu*g / L)))
 print(TPstateviolin)
 ```
 
@@ -161,11 +172,11 @@ Which states have the highest and lowest concentration ranges?
 
 10. Create two jitter plots comparing TN and TP concentrations across states, with samplemonth as the color. Choose a color palette other than the ggplot default.
 
-```{r}
+```{r, warning = FALSE}
 #jitter ggplot of TN concentrations across states
 TNstate_jitter <- ggplot(LAGOSNandP, aes(x = state, y = tn, color = samplemonth)) +
  geom_jitter(alpha = 0.3) +
- labs(x = "State", y = "Total Nitrogen Concentration (mg/L)", color = "Month") +
+ labs(x = "State", y = expression(Total ~ N ~ (mu*g / L)), color = "Month") +
  scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
  theme(legend.position = "top")
 print(TNstate_jitter)
@@ -173,7 +184,7 @@ print(TNstate_jitter)
 #jitter ggplot of TP concentrations across states
 TPstate_jitter <- ggplot(LAGOSNandP, aes(x = state, y = tp, color = samplemonth)) +
  geom_jitter(alpha = 0.3) +
- labs(x = "State", y = "Total Phosphorus Concentration (mg/L)", color = "Month") +
+ labs(x = "State", y = expression(Total ~ P ~ (mu*g / L)), color = "Month") +
  scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
  theme(legend.position = "top")
 print(TPstate_jitter)
@@ -194,11 +205,11 @@ Which months are sampled most extensively? Does this differ among states?
 
 11. Create two jitter plots comparing TN and TP concentrations across states, with sampleyear as the color. Choose a color palette other than the ggplot default.
 
-```{r}
+```{r, warning = FALSE}
 #jitter plot of TN across state with sampleyear as color
 TNstate_jitter2 <- ggplot(LAGOSNandP, aes(x = state, y = tn, color = sampleyear)) +
  geom_jitter(alpha = 0.3) +
- labs(x = "State", y = "Total Nitrogen Concentration (mg/L)", color = "Year") +
+ labs(x = "State", y = expression(Total ~ N ~ (mu*g / L)), color = "Year") +
  scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
  theme(legend.position = "top")
 print(TNstate_jitter2)
@@ -206,7 +217,7 @@ print(TNstate_jitter2)
 #jitter plot of TP across state with sampleyear as teh color 
 TPstate_jitter2 <- ggplot(LAGOSNandP, aes(x = state, y = tp, color = sampleyear)) +
  geom_jitter(alpha = 0.3) +
- labs(x = "State", y = "Total Phosphorus Concentration (mg/L)", color = "Year") +
+ labs(x = "State", y = expression(Total ~ P ~ (mu*g / L)), color = "Year") +
  scale_color_viridis_c(option = "magma", begin = 0.2, end = 0.8) +
  theme(legend.position = "top")
 print(TPstate_jitter2)
@@ -223,16 +234,16 @@ Which years are sampled most extensively? Does this differ among states?
 ## Reflection
 12. What are 2-3 conclusions or summary points about lake water quality you learned through your analysis?
 
->
+> Spatial variety (i.e. where the states are located, some are further north than others) has an impact on lake water quality, particularly TN and TP. Tophic state calculated by secchi depth, TP, and/or TN has varying numbers of lakes in those categories.
 
 13. What data, visualizations, and/or models supported your conclusions from 12?
 
-> 
+> The jitter plot & violin plots help explain the variation and range of TN and TP in various states. To look at the number of lakes in each trophic state, the count function was used and helps support conclusions in 12. 
 
 14. Did hands-on data analysis impact your learning about water quality relative to a theory-based lesson? If so, how?
 
->
+> Yes, hands-on data analysis impacted my learning about water quality relative to theory-based because it provided me with visualization as well as a better understanding of the data we were working with. 
 
 15.	How did the real-world data compare with your expectations from theory?
 
->
+> Real-world data is always "messier" than the theory data. The data here did follow along with what we would expect to find in water quality of lakes. There were some columns that had NAs and those were obviously removed when plots were created.
