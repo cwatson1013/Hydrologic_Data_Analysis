@@ -25,8 +25,14 @@ Wednesday we used high-frequency hydrographs to learn about how water flows thro
 ```{r, message = FALSE}
 getwd()
 
-# install.packages("StreamPULSE")
-# install.packages("streamMetabolizer")
+install.packages("streamMetabolizer", dependencies = TRUE, 
+                 repos = c("https://owi.usgs.gov/R", "https://cran.rstudio.com"))
+
+library(devtools)
+
+install_github('streampulse/StreamPULSE', force = TRUE)
+
+library(StreamPULSE)
 
 packages <- c(
   "dataRetrieval", 
@@ -81,12 +87,13 @@ ggplot(Potdat,
        aes(x = Flow_Inst, y = Nitrate_mgl)) +
   geom_point() +
   scale_x_log10() +
-  scale_y_log10()
+  scale_y_log10() #these are C-Q plots where we are plotting concentration (C) against the flow (Q); pretty typical to do a log transform of both axes for C-Q plots because if we don't do that, the points will be clumped together and we likely won't be able to see much
+
 ```
 
 Which of these rivers is more chemostatic?
 
->
+> Chemostatic: concentration of the river does not change with discharge; Pootomac river is not chemostatic because as you get higher discharge amounts, you get higher concentraions; therefore Crane Creek would be considered chemostatic
 
 ## Hysteresis Loops
 
@@ -100,7 +107,10 @@ dygraph(
     )
   ) %>% 
   dySeries("Nitrate", axis = "y2") %>%
-  dyRangeSelector()
+  dyRangeSelector() #nitrate concentrations decrease as discharge increases
+
+#can have diluting (negative slope) or flushing (positive slope) streams
+#hysteresis: difference between rising and falling limbs of Q and C at the beginning and end of the storm
 ```
 
 Look at the storm that occured around February 1st. Do you expect this storm to be a flushing or a diluting storm?
@@ -112,32 +122,37 @@ PotomacStorm <- Potdat %>%
   filter(dateTime > "2016-01-31" & dateTime < "2016-02-14") 
 
 ggplot(PotomacStorm, aes(x = Flow_Inst, y = Nitrate_mgl, color = dateTime)) +
-  geom_point() 
+  geom_point() #beginning of storm is darker blue
+#diluting stream; as time progresses, you have a rising limb of the storm, and concentration starts to go down, but doesn't go all the way down; example of counterclockwise hysteresis; at every single discharge, you have two concentrations; slope on rising limb (quickflow) is different than the slope on the falling limb (baseflow) which is why we have a hysteresis plot; in quickflow (overland flow), you have lower concentrations of nitrate whereas in baseflow (groundwater), you have higher concentrations of nitrate, so most of the nitrate is coming in from the groundwater
+
+#diluting storms: 
+
+#flushing storms: concentrations of nitrates increase because you are also flushing the nutrients with high amounts of water
 
 
 ```
 
 Did this storm exhibit clockwise or counterclockwise hysteresis?
 
->
+> Counterclockwise hysteresis
 
 Which direction do hysteresis loops slope for diluting storms?
 
->
+> negative slopes, downwards
 
 Which direction do hysteresis loops go for flushing storms?
 
->
+> Could be positive or negative 
 
 ## Using dissolved oxygen to estimate metabolism
 
 What is "ecosystem metabolism"?
 
->
+>how much carbon they consume and produce; GPP (gross primary productivity): fixing carbon from the atmospherea and increasing the amount of C in the stream (producing oxygen) and ecosystem respiration - consume oxygen while fixing CO2
 
 Why would we want to know the *GPP* and *ER* of a river reach?
 
->
+>The amount of material in a stream is really important to determine the number of trophic levels and how many fish you can support
 
 
 The StreamPulse project is a group of researchers around the world who are measuring oxygen concentrations in streams to determine the GPP and ER of many different types of streams and rivers from around the globe. We will be using data from their website for this class period. This project uses the R package `streamMetabolizer` to compute its estimates of metabolism and allows data download from its site using the `StreamPULSE` R package.
@@ -147,18 +162,18 @@ citation('streamMetabolizer')
 ```
 
 ```{r}
-Enodat <- request_data(
+Enodat <- request_data( #have to use request_data to get data from StreamPULSE
   sitecode = "NC_Eno",
-  variables = c('DO_mgL'),
+  variables = c('DO_mgL'), #have to give it some variables that you want it to pull
   startdate = "2016-09-15", 
   enddate = "2016-09-20"
-  )
+  ) #pulls in a list of 3 different objects; doesn't pull in a dataframe
 
-Eno.lon <- Enodat[[2]]$lon
+Eno.lon <- Enodat[[2]]$lon #indexing data with the [[]]; calling the second value on the list, but only want longitude data, so use $lon to get just that information
 
 Eno.DO <- Enodat[[1]] %>%
-  spread(value = value, key = variable) %>%
-  mutate(DateTime_Solar = convert_UTC_to_solartime(DateTime_UTC, Eno.lon))
+  spread(value = value, key = variable) %>%  #have to spread if you want them in different columns
+  mutate(DateTime_Solar = convert_UTC_to_solartime(DateTime_UTC, Eno.lon)) #can convert UTC to local solartime (solar time is if you just thought about the time when the sun is out, like having a sun dial out)
 
 ggplot(Eno.DO, aes(x = DateTime_Solar, y = DO_mgL)) + geom_line()
 ```
@@ -169,7 +184,7 @@ $\frac{dO_2}{dt} = P_t + R_t + D_t$
 
 What are P~t~, R~t~ and D~t~? What are these parameters functions of?
 
->
+> D~t = diffusion at a time step; P_t: productivity, which increase during the daytime because O2 is higher; respiration happens all the time, and will be more or less constant during the day and night
 
 
 Visit https://data.streampulse.org/ 
@@ -193,7 +208,7 @@ On the righthand site you will see a kernel density plot. A kernel density plot 
 
 Is GPP or ER greater? Does this change at different parts of the year or between years? What is the range of dissolved oxygen (DO) found in the site? 
 
->
+> Kernal density plot: draws boundaries around bounderies of where most of those points fall; smaller area is where you have 25% of the points, and the bigger area is where you have 75% of the points fall. This is net consumer because ER is greater than GPP and it is consuming more carbon than it is actually producing
 
 For some sites you can overlay data about other factors over the DO data. Play around with that and see if you can find any relationships. 
 
