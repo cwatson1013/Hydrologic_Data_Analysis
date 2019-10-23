@@ -235,12 +235,12 @@ We might want to visualize how monitoring efforts and secchi depths have changed
 ```{r}
 # add a "decade" column 
 LAGOScombined <- LAGOScombined %>%
-  mutate(decade = floor_date(sampledate, years (10)),
-         decade = year(decade))
+  mutate(decade = floor_date(sampledate, years (10)), #identifies the decade this sample is in (gives you "1980-01-01")
+         decade = year(decade)) #do another mutate in order to just get the year "1980" as an output
 
 # create a new summary data frame, with each lake divided by decade
 secchi.summary.decade <- LAGOScombined %>%
-  group_by(lagoslakeid, decade) %>%
+  group_by(lagoslakeid, decade) %>% #so that each lake id has every decade they were sampled
   summarise(secchi.mean = mean(secchi),
             lat = mean(nhd_lat), 
             long = mean(nhd_long)) %>%
@@ -251,10 +251,10 @@ secchi.decade.spatial <- st_as_sf(secchi.summary.decade, coords = c("long", "lat
 
 # plot the data with decades as separate facets
 Secchiplot <- ggplot() +
-  geom_sf(data = states.subset, fill = "white") +
+  geom_sf(data = states.subset, fill = "white") + # put state sf first
   geom_sf(data = secchi.decade.spatial, aes(color = secchi.mean), 
           alpha = 0.5, size = 1) +
-  facet_wrap(vars(decade), ncol = 5) +
+  facet_wrap(vars(decade), ncol = 5) + #creating a facet for each decade
   scale_color_viridis_c() +
   labs(color = "Average Secchi Depth (m)") +
   theme(legend.position = "top")
@@ -271,14 +271,14 @@ Secchi.Animation <- ggplot() +
   geom_sf(data = secchi.decade.spatial, aes(color = secchi.mean), 
           alpha = 0.5, size = 1) +
   scale_color_viridis_c() +
-  theme(legend.position = "top") +
+  theme(legend.position = "top") + #this code is just regular ggplot code, should all be recognizable
   #gganimate code here:
-  labs(title = 'Decade: {closest_state}', color = "Average Secchi Depth (m)") +
-  transition_states(decade, state_length = 1, transition_length = 0) +
+  labs(title = 'Decade: {closest_state}', color = "Average Secchi Depth (m)") + #title is animated, 'state' means the condition
+  transition_states(decade, state_length = 1, transition_length = 0) + #the thing that will be changing will be the decade. The time it spends between states (transition_length) will be 0. Each condition will last for 1 unit of time (state_length)
   enter_appear() +
   exit_disappear() 
 
-#anim_save('Secchi.Animation.gif', animate(Secchi.Animation, height = 400, wid = 600, renderer = gifski_renderer(loop = TRUE)))
+anim_save('Secchi.Animation.gif', animate(Secchi.Animation, height = 400, wid = 600, renderer = gifski_renderer(loop = TRUE)))
 
 ```
 
