@@ -1,0 +1,218 @@
+---
+title: "Assignment 8: Mapping"
+author: "Caroline Watson"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+## OVERVIEW
+
+This exercise accompanies the lessons in Hydrologic Data Analysis on mapping
+
+## Directions
+1. Change "Student Name" on line 3 (above) with your name.
+2. Work through the steps, **creating code and output** that fulfill each instruction.
+3. Be sure to **answer the questions** in this assignment document.
+4. When you have completed the assignment, **Knit** the text and code into a single pdf file.
+5. After Knitting, submit the completed exercise (pdf file) to the dropbox in Sakai. Add your last name into the file name (e.g., "A08_Salk.html") prior to submission.
+
+The completed exercise is due on 23 October 2019 at 9:00 am.
+
+## Setup
+
+1. Verify your working directory is set to the R project file, 
+2. Load the tidyverse, lubridate, cowplot, LAGOSNE, sf, maps, and viridis packages.
+3. Set your ggplot theme (can be theme_classic or something else)
+4. Load the lagos database, the USA rivers water features shape file, and the HUC6 watershed shape file.
+
+```{r setup}
+#verifying working directory
+getwd()
+
+#loading packages
+library(tidyverse)
+library(lubridate)
+library(cowplot)
+library(LAGOSNE)
+library(sf)
+library(maps)
+library(viridis)
+library(trend)
+
+#setting ggplot theme
+theme_set(theme_classic())
+
+#loading LAGOS dataset
+LAGOSdata <- lagosne_load()
+
+#loading USA rivers water features shape file
+waterfeatures <- st_read("./Data/Raw/hydrogl020.dbf")
+
+#loading HUC6 watershed shape file
+HUC6 <- st_read("./Data/Raw/Watersheds_Spatial/WBDHU6.dbf")
+```
+
+## Mapping water quality in lakes
+
+Complete the in-class exercise from lesson 15, to map average secchi depth measurements across states in Maine, considering lake area and lake depth as predictors for water clarity. Steps here are identical to the lesson, with the following edits: 
+
+* Make sure all your wrangling is done in this document (this includes basic wrangling of the LAGOS database)
+* In your cowplot, do not adjust the legend items (even though they look ugly). Rather, reflect on how you would improve them with additional coding. 
+* For item 9, **do** run a regression on secchi depth by lake area and a separate regression on secchi depth by lake depth. Make scatterplots of these relationships. Note that log-transforming one of these items may be necessary.
+
+5. Filter the states and secchi depth datasets so that they contain Maine only. For the secchi depth dataset, create a summary dataset with just the mean secchi depth. 
+
+```{r}
+#filtering for ME data only
+Maine_secchi <- LAGOScombined %>%
+  filter(state == "ME")
+
+#Maine subset dataset
+Maine_subset <- states.subset <- filter(ID == "maine")
+
+#ME secchi summary data
+ME.secchi.summary <- Maine_secchi %>%
+  group_by(lagoslakeid) %>%
+  summarise(secchi.mean = mean(secchi),
+            area = mean(lake_area_ha),
+            depth = mean(maxdepth),
+            lat = mean(nhd_lat), 
+            long = mean(nhd_long)) %>%
+  drop_na()
+
+```
+
+6. Create a plot of mean secchi depth for lakes in Maine, with mean secchi depth designated as color and the lake area as the size of the dot. Remember that you are using size in the aesthetics and should remove the size = 1 from the other part of the code. Adjust the transparency of points as needed.
+
+```{r}
+
+#secchi spatial info for ME
+secchi.spatial.ME <- st_as_sf(ME.secchi.summary, coords = c("long", "lat"), crs = 4326)
+
+#plot of mean secchi depths for lakes in ME
+ME.mean.secchi.plot <- ggplot() +
+  geom_sf(data = Maine_subset, fill = "white") +
+  geom_sf(data = secchi.spatial.ME, aes(color = secchi.mean, size = area),
+          alpha = 0.5) +
+  scale_color_viridis_c() +
+  labs(color = "Average Secchi Depth (m)", size = "Area") +
+  theme(legend.position = "top")
+print(ME.mean.secchi.plot)
+
+```
+
+7. Create a second plot, but this time use maximum depth of the lake as the size of the dot. 
+
+```{r}
+#ggplot of data with max depth as size of the dot #can we use mean max depth? or should it just be max depth?
+ME.max.depth.plot <- ggplot() + 
+  geom_sf(data = Maine_subset, fill = "white") +
+  geom_sf(data = secchi.spatial.ME, aes(color = secchi.mean, size = depth),
+          alpha = 0.5) +
+  scale_color_viridis_c() +
+  labs(color = "Average Secchi Depth (m)", size = "Depth") +
+  theme(legend.position = "top")
+print(ME.max.depth.plot)
+
+```
+
+8. Plot these maps in the same plot with the `plot_grid` function. Don't worry about adjusting the legends (if you have extra time this would be a good bonus task).
+
+```{r}
+
+#plotting the graphs on the same plot
+plot_grid(ME.mean.secchi.plot, ME.max.depth.plot)
+
+```
+
+What would you change about the legend to make it a more effective visualization? 
+
+> To make this a more effective visualization, I would have one legend showing the average secchi depth, as opposed to having it appear twice. I would also decrease the box sizes and possibly get rid of the squares since the squares do not represent the size of the points.
+
+9. What relationships do you see between secchi depth, lake area, and lake depth? Which of the two lake variables seems to be a stronger determinant of secchi depth? (make a scatterplot and run a regression to test this)
+
+*Note: consider log-transforming a predictor variable if appropriate*
+
+
+```{r}
+
+#scatter plot of average secchi depth vs depth of lake
+ME.depth.secchi <- ggplot(ME.secchi.summary, aes(x = depth, y = secchi.mean)) +
+  geom_point() +
+  labs(x = "Mean Depth (m)", y = "Mean Secchi Depth (m)")
+print(ME.depth.secchi)
+
+#scatter plot of mean area and mean secchi depth; log transformed area because all datapoints were to the left side of the graph
+ggplot(ME.secchi.summary, aes(x = log(area), y = secchi.mean)) +
+  geom_point() +
+  labs(x = "Log of Lake Area (m2)", y = "Mean Secchi Depth (m)")
+
+#running regression on the depth and secchi depth variables
+linearMod <- lm(data = ME.secchi.summary, secchi.mean ~ depth + log(area))
+print(linearMod)
+summary(linearMod)
+
+```
+
+> From the analysis above, as lake area increases, the average secchi depth decreases. As lake depth increases, the average secchi depth also increases. Between lake depth and area, lake depth seems to be the stronger determinent of secchi depth. This is evidenced in the scatter plots made, where area needed to be log transformed to show a relationship between secchi depth and area. Also, the regression analysis showed that depth was statistically significant in predicting secchi depth, whereas log(area) was not statistically significant.
+
+## Mapping water features and watershed boundaries
+
+10. Wrangle the USA rivers and HUC6 watershed boundaries dataset so that they include only the features present in Florida (FL). Adjust the coordinate reference systems if necessary to ensure they use the same projection. 
+
+```{r}
+# Filter for Florida
+waterfeatures.FL <- filter(waterfeatures, STATE == "FL") #check coordinate system!
+
+# Remove a couple feature types we don't care about
+waterfeatures.FL <- filter(waterfeatures.FL, FEATURE != "Apparent Limit" & FEATURE != "Closure Line")
+
+#filtering for just FL in HUC6 dataset
+summary(HUC6$States)
+HUC6.FL <- HUC6 %>%
+  filter(States %in% c("AL,FL", "AL,FL,GA", "FL", "FL,GA")) #check projection
+
+#checking projection of the data
+st_crs(HUC6.FL) #already in coordinate reference system 4269
+st_crs(waterfeatures.FL)#does not have a coordinate reference system
+
+#updating coordinate reference system for waterfeatures.FL
+waterfeatures.FL <- st_set_crs(waterfeatures.FL, 4269) 
+st_crs(waterfeatures.FL)
+
+```
+
+11. Create a map of watershed boundaries in Florida, with the layer of water features on top. Color the watersheds gray (make sure the lines separating watersheds are still visible) and color the water features by type. 
+
+```{r}
+#map of watershed boundaries in FL
+ ggplot() +
+  geom_sf(data = HUC6.FL, fill = "gray", color = "darkgray", alpha = 0.5) +
+  geom_sf(data = waterfeatures.FL, aes(color = FEATURE, fill = FEATURE)) +
+  scale_fill_brewer(palette = "Paired") +
+  scale_color_brewer(palette = "Paired")
+
+```
+
+12. What are the dominant water features in Florida? How does this distribution differ (or not) compared to North Carolina?
+
+> The dominant water features in Florida are shoreline, streams, canals, and right bank.  
+
+## Reflection
+13. What are 2-3 conclusions or summary points about mapping you learned through your analysis?
+
+>
+
+14. What data, visualizations, and/or models supported your conclusions from 13?
+
+> 
+
+15. Did hands-on data analysis impact your learning about mapping relative to a theory-based lesson? If so, how?
+
+>
+
+16.	How did the real-world data compare with your expectations from theory?
+
+>
